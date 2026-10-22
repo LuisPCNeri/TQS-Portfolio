@@ -1,9 +1,13 @@
 package ua.pt.tqs.HW1_125264.Entities;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +17,12 @@ import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelSize;
 class ParcelStateMachineTest {
 
     private Parcel parcel;
+    private Clock clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
 
     @BeforeEach
     void setup() {
-        parcel = new Parcel("Station A", ParcelSize.M, "user@domain.com");
+        parcel = new Parcel("Station A", ParcelSize.M, "user@domain.com", 
+            LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
     }
 
     @Test
@@ -37,10 +43,10 @@ class ParcelStateMachineTest {
         parcel.markAsInTransit("Courier");
         assertEquals(Parcel.ParcelState.IN_TRANSIT, parcel.getState());
 
-        parcel.markAsReadyForPickup("Courier");
+        parcel.markAsReadyForPickup("Courier", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
         assertEquals(Parcel.ParcelState.READY_FOR_PICKUP, parcel.getState());
-        assertNotNull("Pickup code should be generated", parcel.getPickupCode() );
-        assertNotNull("Ready timestamp should be set", parcel.getReadyForPickupAt() );
+        assertNotNull(parcel.getPickupCode(), "Pickup code should be generated");
+        assertNotNull(parcel.getReadyForPickupAt(), "Ready timestamp should be set");
 
         parcel.markAsPickedUp("Recipient");
         assertEquals(Parcel.ParcelState.PICKED_UP, parcel.getState());
@@ -52,7 +58,7 @@ class ParcelStateMachineTest {
     @Test
     void testValidExpirationAndReturnPath() {
         parcel.markAsInTransit("Courier");
-        parcel.markAsReadyForPickup("Courier");
+        parcel.markAsReadyForPickup("Courier", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
 
         parcel.expire("System");
         assertEquals(Parcel.ParcelState.EXPIRED, parcel.getState());
@@ -91,7 +97,7 @@ class ParcelStateMachineTest {
     @Test
     void testInvalidTransitionsFromReadyForPickup() {
         parcel.markAsInTransit("System");
-        parcel.markAsReadyForPickup("Courier");
+        parcel.markAsReadyForPickup("Courier", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             parcel.markAsInTransit("System");
@@ -106,7 +112,7 @@ class ParcelStateMachineTest {
     @Test
     void testInvalidTransitionsFromExpired() {
         parcel.markAsInTransit("System");
-        parcel.markAsReadyForPickup("Courier");
+        parcel.markAsReadyForPickup("Courier", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
         parcel.expire("System");
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
@@ -138,14 +144,34 @@ class ParcelStateMachineTest {
     }
 
     @Test
-    void testGetAndSetRecipientContact() {
-        parcel.setRecipientContact("newContact@domain.com");
-        assertEquals("newContact@domain.com", parcel.getRecipientContact());
+    void testPickupCodesAreUniqueAcrossParcels() {
+        var codes = IntStream.range(0, 1000)
+            .mapToObj(i -> new Parcel("S", ParcelSize.M, "u@d.com", 
+            LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)))
+            .peek(p -> p.markAsInTransit("c"))
+            .peek(p -> p.markAsReadyForPickup("c", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)))
+            .map(Parcel::getPickupCode)
+            .collect(Collectors.toSet());
+
+        assertEquals(1000, codes.size());
     }
 
     @Test
-    void testGetAndSetStation() {
-        parcel.setStation("StationB");
-        assertEquals("StationB", parcel.getStation());
+    void testShouldUpdateStationWhenParcelIsRedirected() {
+        parcel.setStation("Station B");
+        parcel.markAsInTransit("Courier");
+
+        assertEquals("Station B", parcel.getStation());
+        assertEquals(Parcel.ParcelState.IN_TRANSIT, parcel.getState());
+    }
+
+    @Test
+    void testShouldUpdateContactWhenRecipientChanges() {
+        parcel.setRecipientContact("other@domain.com");
+        parcel.markAsInTransit("Courier");
+        parcel.markAsReadyForPickup("Courier", LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+
+        assertEquals("other@domain.com", parcel.getRecipientContact());
+        assertNotNull(parcel.getPickupCode()); // pickup code was still generated
     }
 }

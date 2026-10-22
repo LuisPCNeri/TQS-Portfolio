@@ -62,19 +62,19 @@ public class Parcel {
     @Enumerated(EnumType.STRING)
     private ParcelState state;
 
-    public Parcel(String station, ParcelSize parcelSize, String recipientContact) {
+    public Parcel(String station, ParcelSize parcelSize, String recipientContact, LocalDateTime now) {
         this.station          = station;
         this.recipientContact = recipientContact;
         this.size             = parcelSize;
 
         this.trackingCode = UUID.randomUUID();
         this.state        = ParcelState.CREATED;
-        this.createdAt    = LocalDateTime.now();
+        this.createdAt    = now;
 
         this.history.add(new StateHistory(ParcelState.CREATED, this.createdAt, "Partner"));
     }
 
-    Parcel() {}
+    protected Parcel() {}
 
     private boolean isNextStateValid(ParcelState nextState) {
 
@@ -110,11 +110,11 @@ public class Parcel {
         transitionTo(ParcelState.DESTROYED, actor);
     }
 
-    public void markAsReadyForPickup(String actor) {
-        transitionTo(ParcelState.READY_FOR_PICKUP, actor);
-
+    public void markAsReadyForPickup(String actor, LocalDateTime now) {
         this.pickupCode       = UUID.randomUUID();
-        this.readyForPickupAt = LocalDateTime.now();
+        this.readyForPickupAt = now;
+
+        transitionTo(ParcelState.READY_FOR_PICKUP, actor);
     }
 
     public void markAsPickedUp(String actor) {
@@ -136,7 +136,7 @@ public class Parcel {
     public LocalDateTime getCreatedAt()        { return this.createdAt; }
     public LocalDateTime getReadyForPickupAt() { return this.readyForPickupAt; }
 
-    public List<StateHistory> getHistory() { return this.history; }
+    public List<StateHistory> getHistory() { return List.copyOf(this.history); }
 
     public String getRecipientContact() { return this.recipientContact; }
     public void setRecipientContact(String recipientContact) { this.recipientContact = recipientContact; }
