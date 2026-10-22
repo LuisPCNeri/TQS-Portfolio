@@ -78,42 +78,13 @@ public class Parcel {
 
     private boolean isNextStateValid(ParcelState nextState) {
 
-        switch (this.state) {
-            case CREATED: {
-                if( nextState != ParcelState.CANCELLED && nextState != ParcelState.IN_TRANSIT) {
-                    return false;
-                }
-                break;
-            }
-            case IN_TRANSIT: {
-                if( nextState != ParcelState.READY_FOR_PICKUP && nextState != ParcelState.DESTROYED) {
-                    return false;
-                }
-                break;
-            }
-            case READY_FOR_PICKUP: {
-                if( nextState != ParcelState.PICKED_UP && nextState != ParcelState.EXPIRED) {
-                    return false;
-                }
-                break;
-            }
-            case EXPIRED: {
-                if( nextState != ParcelState.RETURNED) {
-                    return false;
-                }
-                break;
-            }
-
-            /* Terminal States, which means no actions possible after them */
-            case PICKED_UP:
-            case CANCELLED:
-            case DESTROYED:
-            case RETURNED: {
-                return false;
-            }
-        }
-
-        return true;
+        return switch (this.state) {
+            case CREATED          -> nextState == ParcelState.CANCELLED || nextState == ParcelState.IN_TRANSIT;
+            case IN_TRANSIT       -> nextState == ParcelState.READY_FOR_PICKUP || nextState == ParcelState.DESTROYED;
+            case READY_FOR_PICKUP -> nextState == ParcelState.PICKED_UP || nextState == ParcelState.EXPIRED;
+            case EXPIRED          -> nextState == ParcelState.RETURNED;
+            case PICKED_UP, CANCELLED, DESTROYED, RETURNED -> false;
+        };
     }
 
     private void transitionTo(ParcelState nextState, String actor) {
@@ -164,6 +135,8 @@ public class Parcel {
     public ParcelState getState() { return this.state; }
     public LocalDateTime getCreatedAt()        { return this.createdAt; }
     public LocalDateTime getReadyForPickupAt() { return this.readyForPickupAt; }
+
+    public List<StateHistory> getHistory() { return this.history; }
 
     public String getRecipientContact() { return this.recipientContact; }
     public void setRecipientContact(String recipientContact) { this.recipientContact = recipientContact; }
