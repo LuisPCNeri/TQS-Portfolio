@@ -1,12 +1,13 @@
-FROM maven AS build
+FROM maven:3.9-eclipse-temurin-21 AS deps
 WORKDIR /app
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn dependency:go-offline
 
-# Stage 2: Run the application
-FROM eclipse-temurin:21-jre
+FROM deps AS build
+COPY src ./src
+RUN mvn package -DskipTests -q
+
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
