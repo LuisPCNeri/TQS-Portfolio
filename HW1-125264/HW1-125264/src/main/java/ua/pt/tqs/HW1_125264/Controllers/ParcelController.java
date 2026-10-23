@@ -40,6 +40,7 @@ public class ParcelController {
                 .state(createdParcel.getState())
                 .createdAt(createdParcel.getCreatedAt())
                 .readyForPickupAt(createdParcel.getReadyForPickupAt())
+                .pickupDeadline(createdParcel.getPickupDeadline())
                 .build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(parcelResp);

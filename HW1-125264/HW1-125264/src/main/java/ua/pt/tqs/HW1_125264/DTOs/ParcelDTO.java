@@ -32,5 +32,7 @@ public class ParcelDTO {
     @JsonProperty(access = Access.READ_ONLY)
     private LocalDateTime createdAt;
     @JsonProperty(access = Access.READ_ONLY)
+    private LocalDateTime pickupDeadline;
+    @JsonProperty(access = Access.READ_ONLY)
     private LocalDateTime readyForPickupAt;
 }

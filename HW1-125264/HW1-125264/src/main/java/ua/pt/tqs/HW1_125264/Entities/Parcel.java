@@ -63,6 +63,8 @@ public class Parcel {
     private LocalDateTime createdAt;
     private LocalDateTime readyForPickupAt;
 
+    private LocalDateTime pickupDeadline;
+
     @Enumerated(EnumType.STRING)
     private ParcelSize size;
 
@@ -96,7 +98,7 @@ public class Parcel {
         };
     }
 
-    private void transitionTo(ParcelState nextState, String actor) {
+    private void transitionTo(ParcelState nextState, String actor, LocalDateTime now) {
         if(!isNextStateValid(nextState)) {
             throw new IllegalStateException(
                 String.format("Cannot transition parcel from %s to %s", this.state, nextState)
@@ -104,52 +106,37 @@ public class Parcel {
         }
 
         this.state = nextState;
-        this.history.add(new StateHistory(nextState, LocalDateTime.now(), actor));
+        this.history.add(new StateHistory(nextState, now, actor));
     }
 
-    public void cancel(String actor) {
-        transitionTo(ParcelState.CANCELLED, actor);
+    public void cancel(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.CANCELLED, actor, now);
     }
 
-    public void markAsInTransit(String actor) {
-        transitionTo(ParcelState.IN_TRANSIT, actor);
+    public void markAsInTransit(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.IN_TRANSIT, actor, now);
     }
 
-    public void markAsDestroyed(String actor) {
-        transitionTo(ParcelState.DESTROYED, actor);
+    public void markAsDestroyed(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.DESTROYED, actor, now);
     }
 
     public void markAsReadyForPickup(String actor, LocalDateTime now) {
         this.pickupCode       = UUID.randomUUID();
         this.readyForPickupAt = now;
 
-        transitionTo(ParcelState.READY_FOR_PICKUP, actor);
+        transitionTo(ParcelState.READY_FOR_PICKUP, actor, now);
     }
 
-    public void markAsPickedUp(String actor) {
-        transitionTo(ParcelState.PICKED_UP, actor);
+    public void markAsPickedUp(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.PICKED_UP, actor, now);
     }
 
-    public void expire(String actor) {
-        transitionTo(ParcelState.EXPIRED, actor);
+    public void expire(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.EXPIRED, actor, now);
     }
 
-    public void markAsReturned(String actor) {
-        transitionTo(ParcelState.RETURNED, actor);
+    public void markAsReturned(String actor, LocalDateTime now) {
+        transitionTo(ParcelState.RETURNED, actor, now);
     }
-
-    public ParcelSize getSize()   { return this.size; }
-    public UUID getTrackingCode() { return this.trackingCode; }
-    public UUID getPickupCode()   { return this.pickupCode; }
-    public ParcelState getState() { return this.state; }
-    public LocalDateTime getCreatedAt()        { return this.createdAt; }
-    public LocalDateTime getReadyForPickupAt() { return this.readyForPickupAt; }
-
-    public List<StateHistory> getHistory() { return List.copyOf(this.history); }
-
-    public String getRecipientContact() { return this.recipientContact; }
-    public void setRecipientContact(String recipientContact) { this.recipientContact = recipientContact; }
-
-    public String getStation() { return this.station; }
-    public void setStation(String station)   { this.station = station; }
 }

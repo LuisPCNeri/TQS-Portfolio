@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+import ua.pt.tqs.HW1_125264.TuttiBoxProperties;
 import ua.pt.tqs.HW1_125264.DTOs.ParcelDTO;
 import ua.pt.tqs.HW1_125264.Entities.Compartment;
 import ua.pt.tqs.HW1_125264.Entities.Parcel;
@@ -19,12 +20,15 @@ public class ParcelService {
 
     private ParcelRepository parcelRepository;
     private CompartmentRepository compartmentRepository;
+    private TuttiBoxProperties properties;
 
     private Clock clock;
 
-    public ParcelService(ParcelRepository parcelRepository, CompartmentRepository compartmentRepository, Clock clock) {
+    public ParcelService(ParcelRepository parcelRepository, CompartmentRepository compartmentRepository, TuttiBoxProperties properties, Clock clock) {
         this.parcelRepository      = parcelRepository;
         this.compartmentRepository = compartmentRepository;
+        this.properties            = properties;
+
         this.clock = clock;
     }
 
@@ -45,6 +49,13 @@ public class ParcelService {
 
         Parcel p = new Parcel(compartment.getStation().getName(), parcel.getSize(), parcel.getRecipientContact(), now);
         p.setCompartment(compartment);
+
+        LocalDateTime deadline = now.plusHours(properties.getPickupDeadlineHours());
+        System.out.println("DEBUG pickup deadline hours: " + properties.getPickupDeadlineHours());
+        System.out.println("DEBUG deadline: " + deadline);
+
+        p.setPickupDeadline(deadline);
+        System.out.println("DEBUG parcel pickup deadline after set: " + p.getPickupDeadline());
 
         return parcelRepository.save(p);
     }
