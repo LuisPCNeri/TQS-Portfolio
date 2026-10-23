@@ -33,7 +33,7 @@
         <cucumber.version>7.20.1</cucumber.version>
         <wiremock.version>3.10.0</wiremock.version>
         <playwright.version>1.49.0</playwright.version>
-        <lombok.version>1.18.34</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
     </properties>
 
 	<dependencies>
