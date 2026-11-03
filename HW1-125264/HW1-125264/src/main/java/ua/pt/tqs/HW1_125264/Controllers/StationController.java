@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ua.pt.tqs.HW1_125264.DTOs.LockerStationDTO;
 import ua.pt.tqs.HW1_125264.Entities.LockerStation;
-import ua.pt.tqs.HW1_125264.Services.ParcelService;
 import ua.pt.tqs.HW1_125264.Services.StationService;
 
 @RestController

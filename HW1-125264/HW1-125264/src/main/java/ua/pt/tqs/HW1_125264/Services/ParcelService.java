@@ -51,7 +51,7 @@ public class ParcelService {
 
         Compartment compartment = compartmentRepository.findFirstAvailable(stationId, parcel.getSize())
                 .orElseThrow(() -> new NoAvailableCompartmentException(
-            String.format("No available %s compartment at station with id %ld", parcel.getSize(), stationId)
+            String.format("No available %s compartment at station with id %d", parcel.getSize(), stationId)
         ));
 
         compartment.setStatus(CompartmentStatus.OCCUPIED);
