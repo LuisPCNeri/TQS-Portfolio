@@ -12,7 +12,9 @@ import ua.pt.tqs.HW1_125264.DTOs.ParcelDTO;
 import ua.pt.tqs.HW1_125264.Entities.Compartment;
 import ua.pt.tqs.HW1_125264.Entities.Parcel;
 import ua.pt.tqs.HW1_125264.Entities.Compartment.CompartmentStatus;
+import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelState;
 import ua.pt.tqs.HW1_125264.Exceptions.HardwareFailureException;
+import ua.pt.tqs.HW1_125264.Exceptions.InvalidPickupCodeException;
 import ua.pt.tqs.HW1_125264.Exceptions.NoAvailableCompartmentException;
 import ua.pt.tqs.HW1_125264.Exceptions.ParcelNotFoundException;
 import ua.pt.tqs.HW1_125264.LockerHardwareSim.LockerHardwarePort;
@@ -81,6 +83,34 @@ public class ParcelService {
 
         parcel.markAsInTransit(actor, now);
         parcel.markAsReadyForPickup(actor, now);
+
+        return parcelRepository.save(parcel);
+    }
+
+    @Transactional
+    public Parcel pickupParcel(UUID trackingCode, UUID pickupCode, String actor, LocalDateTime now) {
+
+        Parcel parcel = parcelRepository.findByTrackingCode(trackingCode)
+            .orElseThrow(() -> new ParcelNotFoundException("Parcel not found with tracking code: " + trackingCode));
+
+        if(!parcel.getPickupCode().equals(pickupCode)) {
+            throw new InvalidPickupCodeException("Invalid pickup code");
+        }
+
+        if(parcel.getState() != ParcelState.READY_FOR_PICKUP) {
+            throw new IllegalStateException("Parcel is not ready for pickup");
+        }
+
+        OpenResult result = hardwarePort.openCompartment(parcel.getCompartment().getId());
+        if(result == OpenResult.HARDWARE_FAILURE) {
+            throw new HardwareFailureException("Failed to open compartment for dropoff");
+        }
+
+        parcel.markAsPickedUp(actor, now);
+
+        Compartment compartment = parcel.getCompartment();
+        compartment.setStatus(CompartmentStatus.AVAILABLE);
+        compartmentRepository.save(compartment);
 
         return parcelRepository.save(parcel);
     }

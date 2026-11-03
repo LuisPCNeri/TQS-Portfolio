@@ -53,7 +53,7 @@ jobs:
         if: always() && steps.tests.outcome != 'cancelled'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B sonar:sonar
+        run: mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
           -Dsonar.projectKey=HW1-125264
           -Dsonar.projectName='HW1-125264'
           -Dsonar.organization=luispcneri

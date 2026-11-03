@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ua.pt.tqs.HW1_125264.DTOs.ParcelDTO;
 import ua.pt.tqs.HW1_125264.Entities.Parcel;
 import ua.pt.tqs.HW1_125264.Exceptions.HardwareFailureException;
+import ua.pt.tqs.HW1_125264.Exceptions.InvalidPickupCodeException;
 import ua.pt.tqs.HW1_125264.Exceptions.NoAvailableCompartmentException;
 import ua.pt.tqs.HW1_125264.Exceptions.ParcelNotFoundException;
 import ua.pt.tqs.HW1_125264.Services.ParcelService;
@@ -38,38 +39,50 @@ public class ParcelController {
         this.clock         = clock;
     }
 
+    private ParcelDTO toDto(Parcel parcel) {
+        return ParcelDTO.builder().trackingCode(parcel.getTrackingCode())
+                .station(parcel.getStation())
+                .recipientContact(parcel.getRecipientContact())
+                .size(parcel.getSize())
+                .state(parcel.getState())
+                .createdAt(parcel.getCreatedAt())
+                .readyForPickupAt(parcel.getReadyForPickupAt())
+                .pickupDeadline(parcel.getPickupDeadline())
+                .build();
+    }
+
     @PostMapping
     public ResponseEntity<ParcelDTO> createParcel(@RequestParam Long stationId, @RequestBody ParcelDTO parcel) {
         Parcel createdParcel = parcelService.createParcel(stationId, parcel);
 
-        ParcelDTO parcelResp = ParcelDTO.builder().trackingCode(createdParcel.getTrackingCode())
-                .station(createdParcel.getStation())
-                .recipientContact(createdParcel.getRecipientContact())
-                .size(createdParcel.getSize())
-                .state(createdParcel.getState())
-                .createdAt(createdParcel.getCreatedAt())
-                .readyForPickupAt(createdParcel.getReadyForPickupAt())
-                .pickupDeadline(createdParcel.getPickupDeadline())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(parcelResp);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(createdParcel));
     }
 
     @PutMapping("/{trackingCode}/dropoff")
     public ResponseEntity<ParcelDTO> dropoffParcel(@PathVariable UUID trackingCode, @RequestParam String actor) {
         Parcel createdParcel = parcelService.dropOffParcel(trackingCode, actor, LocalDateTime.now(clock));
 
-        ParcelDTO parcelResp = ParcelDTO.builder().trackingCode(createdParcel.getTrackingCode())
-                .station(createdParcel.getStation())
-                .recipientContact(createdParcel.getRecipientContact())
-                .size(createdParcel.getSize())
-                .state(createdParcel.getState())
-                .createdAt(createdParcel.getCreatedAt())
-                .readyForPickupAt(createdParcel.getReadyForPickupAt())
-                .pickupDeadline(createdParcel.getPickupDeadline())
-                .build();
+        return ResponseEntity.ok(toDto(createdParcel));
+    }
 
-        return ResponseEntity.ok(parcelResp);
+    @PutMapping("/{trackingCode}/pickup")
+    public ResponseEntity<ParcelDTO> pickupParcel(@PathVariable UUID trackingCode, @RequestParam UUID pickupCode, @RequestParam String actor) {
+        Parcel parcel = parcelService.pickupParcel(trackingCode, pickupCode, actor, LocalDateTime.now(clock));
+        return ResponseEntity.ok(toDto(parcel));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String,String>> handleIllegalState(IllegalStateException e) {
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidPickupCodeException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidPickupCode(InvalidPickupCodeException e) {
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(ParcelNotFoundException.class)
