@@ -2,6 +2,7 @@ package ua.pt.tqs.HW1_125264.Services;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -11,7 +12,11 @@ import ua.pt.tqs.HW1_125264.DTOs.ParcelDTO;
 import ua.pt.tqs.HW1_125264.Entities.Compartment;
 import ua.pt.tqs.HW1_125264.Entities.Parcel;
 import ua.pt.tqs.HW1_125264.Entities.Compartment.CompartmentStatus;
+import ua.pt.tqs.HW1_125264.Exceptions.HardwareFailureException;
 import ua.pt.tqs.HW1_125264.Exceptions.NoAvailableCompartmentException;
+import ua.pt.tqs.HW1_125264.Exceptions.ParcelNotFoundException;
+import ua.pt.tqs.HW1_125264.LockerHardwareSim.LockerHardwarePort;
+import ua.pt.tqs.HW1_125264.LockerHardwareSim.LockerHardwarePort.OpenResult;
 import ua.pt.tqs.HW1_125264.Repositories.CompartmentRepository;
 import ua.pt.tqs.HW1_125264.Repositories.ParcelRepository;
 
@@ -21,13 +26,17 @@ public class ParcelService {
     private ParcelRepository parcelRepository;
     private CompartmentRepository compartmentRepository;
     private TuttiBoxProperties properties;
+    private LockerHardwarePort hardwarePort;
 
     private Clock clock;
 
-    public ParcelService(ParcelRepository parcelRepository, CompartmentRepository compartmentRepository, TuttiBoxProperties properties, Clock clock) {
+    public ParcelService(ParcelRepository parcelRepository, CompartmentRepository compartmentRepository, TuttiBoxProperties properties, Clock clock,
+            LockerHardwarePort hardwarePort) {
+
         this.parcelRepository      = parcelRepository;
         this.compartmentRepository = compartmentRepository;
         this.properties            = properties;
+        this.hardwarePort          = hardwarePort;
 
         this.clock = clock;
     }
@@ -58,5 +67,21 @@ public class ParcelService {
         System.out.println("DEBUG parcel pickup deadline after set: " + p.getPickupDeadline());
 
         return parcelRepository.save(p);
+    }
+
+    @Transactional
+    public Parcel dropOffParcel(UUID trackingCode, String actor, LocalDateTime now) {
+        Parcel parcel = parcelRepository.findByTrackingCode(trackingCode)
+            .orElseThrow(() -> new ParcelNotFoundException("Parcel not found with tracking code: " + trackingCode));
+
+        OpenResult result = hardwarePort.openCompartment(parcel.getCompartment().getId());
+        if(result == OpenResult.HARDWARE_FAILURE) {
+            throw new HardwareFailureException("Failed to open compartment for dropoff");
+        }
+
+        parcel.markAsInTransit(actor, now);
+        parcel.markAsReadyForPickup(actor, now);
+
+        return parcelRepository.save(parcel);
     }
 }
