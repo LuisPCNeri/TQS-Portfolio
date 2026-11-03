@@ -2,6 +2,7 @@ package ua.pt.tqs.HW1_125264.Services;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -110,6 +111,38 @@ public class ParcelService {
 
         Compartment compartment = parcel.getCompartment();
         compartment.setStatus(CompartmentStatus.AVAILABLE);
+        compartmentRepository.save(compartment);
+
+        return parcelRepository.save(parcel);
+    }
+
+    public Parcel getParcelByTrackingCode(UUID trackingCode) {
+        return parcelRepository.findByTrackingCode(trackingCode)
+            .orElseThrow(() -> new ParcelNotFoundException("Parcel not found with tracking code: " + trackingCode));
+    }
+
+    public List<Parcel> getAllParcels() {
+        return parcelRepository.findAll();
+    }
+
+    public List<Parcel> getParcelsByStation(String station) {
+        return parcelRepository.findByStation(station);
+    }
+
+    public List<Parcel> getParcelsByState(ParcelState state) {
+        return parcelRepository.findByState(state);
+    }
+
+    @Transactional
+    public Parcel markAsReturned(UUID trackingCode, LocalDateTime now) {
+
+        Parcel parcel = parcelRepository.findByTrackingCode(trackingCode)
+            .orElseThrow(() -> new ParcelNotFoundException("Parcel not found with tracking code: " + trackingCode));
+
+        parcel.markAsReturned("Operator", now);
+
+        Compartment compartment = parcel.getCompartment();
+        compartment.setStatus(CompartmentStatus.OCCUPIED);
         compartmentRepository.save(compartment);
 
         return parcelRepository.save(parcel);

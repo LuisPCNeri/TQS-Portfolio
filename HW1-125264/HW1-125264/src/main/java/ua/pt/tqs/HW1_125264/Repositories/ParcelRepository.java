@@ -16,4 +16,6 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
 
     List<Parcel> findByStateAndPickupDeadlineBefore(ParcelState state, LocalDateTime deadline);
     Optional<Parcel> findByTrackingCode(UUID trackingCode);
+    List<Parcel> findByStation(String station);
+    List<Parcel> findByState(ParcelState state);
 }

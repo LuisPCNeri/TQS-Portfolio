@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -68,6 +69,12 @@ public class ParcelController {
     @PutMapping("/{trackingCode}/pickup")
     public ResponseEntity<ParcelDTO> pickupParcel(@PathVariable UUID trackingCode, @RequestParam UUID pickupCode, @RequestParam String actor) {
         Parcel parcel = parcelService.pickupParcel(trackingCode, pickupCode, actor, LocalDateTime.now(clock));
+        return ResponseEntity.ok(toDto(parcel));
+    }
+
+    @GetMapping("/{trackingCode}")
+    public ResponseEntity<ParcelDTO> getParcelByTrackingCode(@PathVariable UUID trackingCode) {
+        Parcel parcel = parcelService.getParcelByTrackingCode(trackingCode);
         return ResponseEntity.ok(toDto(parcel));
     }
 
