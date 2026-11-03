@@ -29,7 +29,7 @@ import ua.pt.tqs.HW1_125264.Services.ParcelService;
 
 @RestController
 @RequestMapping("/api/v1/parcels")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ParcelController {
 
     private ParcelService parcelService;

@@ -14,7 +14,7 @@ import ua.pt.tqs.HW1_125264.Services.StationService;
 
 @RestController
 @RequestMapping("/api/v1/stations")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class StationController {
 
     private final StationService stationService;
