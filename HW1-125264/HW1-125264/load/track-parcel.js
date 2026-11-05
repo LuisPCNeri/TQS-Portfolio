@@ -15,13 +15,11 @@ export let options = {
 };
 
 export function setup() {
-    // Verifique se os campos correspondem exatamente ao seu DTO/Controller
     const payload = JSON.stringify({
         size: 'M',
         recipientContact: 'load@test.com',
     });
 
-    // Se o seu endpoint exigir stationId nos query params:
     const res = http.post('http://localhost:8080/api/v1/parcels?stationId=1', payload, {
         headers: { 'Content-Type': 'application/json' },
     });
