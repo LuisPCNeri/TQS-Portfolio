@@ -6,11 +6,19 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelSize;
 
@@ -19,10 +27,60 @@ class ParcelStateMachineTest {
     private Parcel parcel;
     private Clock clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC);
 
+    private static final Map<Parcel.ParcelState, Set<Parcel.ParcelState>> ALLOWED = Map.of(
+        Parcel.ParcelState.CREATED, EnumSet.of(Parcel.ParcelState.CANCELLED, Parcel.ParcelState.IN_TRANSIT),
+        Parcel.ParcelState.IN_TRANSIT, EnumSet.of(Parcel.ParcelState.READY_FOR_PICKUP, Parcel.ParcelState.DESTROYED),
+        Parcel.ParcelState.READY_FOR_PICKUP, EnumSet.of(Parcel.ParcelState.PICKED_UP, Parcel.ParcelState.EXPIRED),
+        Parcel.ParcelState.EXPIRED, EnumSet.of(Parcel.ParcelState.RETURNED),
+        Parcel.ParcelState.PICKED_UP, EnumSet.noneOf(Parcel.ParcelState.class),
+        Parcel.ParcelState.CANCELLED, EnumSet.noneOf(Parcel.ParcelState.class),
+        Parcel.ParcelState.DESTROYED, EnumSet.noneOf(Parcel.ParcelState.class),
+        Parcel.ParcelState.RETURNED, EnumSet.noneOf(Parcel.ParcelState.class)
+    );
+
     @BeforeEach
     void setup() {
         parcel = new Parcel("Station A", ParcelSize.M, "user@domain.com", 
             LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
+    }
+
+    static Stream<Arguments> allTransitions() {
+        var targets = Arrays.stream(Parcel.ParcelState.values())
+            .filter(s -> s != Parcel.ParcelState.CREATED)
+            .toList();
+
+        return Arrays.stream(Parcel.ParcelState.values())
+            .flatMap(from -> targets.stream()
+                .map(to -> Arguments.of(from, to, ALLOWED.get(from).contains(to))));
+    }
+
+    private Runnable transitionTo(Parcel.ParcelState to) {
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        return switch (to) {
+            case CANCELLED -> () -> parcel.cancel("Actor", now);
+            case IN_TRANSIT -> () -> parcel.markAsInTransit("Actor", now);
+            case DESTROYED -> () -> parcel.markAsDestroyed("Actor", now);
+            case READY_FOR_PICKUP -> () -> parcel.markAsReadyForPickup("Actor", now);
+            case PICKED_UP -> () -> parcel.markAsPickedUp("Actor", now);
+            case EXPIRED -> () -> parcel.expire("Actor", now);
+            case RETURNED -> () -> parcel.markAsReturned("Actor", now);
+            case CREATED -> throw new IllegalArgumentException("No operation transitions to CREATED");
+        };
+    }
+
+    @ParameterizedTest(name = "{0} -> {1} (allowed={2})")
+    @MethodSource("allTransitions")
+    void testAllStateTransitions(Parcel.ParcelState from, Parcel.ParcelState to, boolean allowed) {
+        parcel.setState(from);
+        Runnable transition = transitionTo(to);
+
+        if (allowed) {
+            transition.run();
+            assertEquals(to, parcel.getState());
+        } else {
+            assertThrows(IllegalStateException.class, transition::run);
+            assertEquals(from, parcel.getState());
+        }
     }
 
     @Test
