@@ -33,7 +33,7 @@ export const LockerTerminal: React.FC = () => {
       const response = await fetch(`http://localhost:8080/api/v1/parcels/${pickUpTrackingCode}/pickup`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ pickupCode: pickupCode, actor: courierName }),
+        body: new URLSearchParams({ pickupCode: pickupCode, actor: 'Recipient' }),
       });
       const text = await response.text();
       setMessage(text || 'Parcel picked up successfully.');

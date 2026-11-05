@@ -83,6 +83,69 @@ class ParcelStateMachineTest {
         }
     }
 
+    static Stream<Arguments> validTransitions() {
+        return Stream.of(
+            Arguments.of(Parcel.ParcelState.CREATED, Parcel.ParcelState.CANCELLED),
+            Arguments.of(Parcel.ParcelState.CREATED, Parcel.ParcelState.IN_TRANSIT),
+            Arguments.of(Parcel.ParcelState.IN_TRANSIT, Parcel.ParcelState.READY_FOR_PICKUP),
+            Arguments.of(Parcel.ParcelState.IN_TRANSIT, Parcel.ParcelState.DESTROYED),
+            Arguments.of(Parcel.ParcelState.READY_FOR_PICKUP, Parcel.ParcelState.PICKED_UP),
+            Arguments.of(Parcel.ParcelState.READY_FOR_PICKUP, Parcel.ParcelState.EXPIRED),
+            Arguments.of(Parcel.ParcelState.EXPIRED, Parcel.ParcelState.RETURNED)
+        );
+    }
+
+    private void driveTo(Parcel.ParcelState state, LocalDateTime time) {
+        switch (state) {
+            case CREATED -> { }
+            case CANCELLED -> parcel.cancel("Setup", time);
+            case IN_TRANSIT -> parcel.markAsInTransit("Setup", time);
+            case READY_FOR_PICKUP -> {
+                parcel.markAsInTransit("Setup", time);
+                parcel.markAsReadyForPickup("Setup", time);
+            }
+            case DESTROYED -> {
+                parcel.markAsInTransit("Setup", time);
+                parcel.markAsDestroyed("Setup", time);
+            }
+            case PICKED_UP -> {
+                parcel.markAsInTransit("Setup", time);
+                parcel.markAsReadyForPickup("Setup", time);
+                parcel.markAsPickedUp("Setup", time);
+            }
+            case EXPIRED -> {
+                parcel.markAsInTransit("Setup", time);
+                parcel.markAsReadyForPickup("Setup", time);
+                parcel.expire("Setup", time);
+            }
+            case RETURNED -> {
+                parcel.markAsInTransit("Setup", time);
+                parcel.markAsReadyForPickup("Setup", time);
+                parcel.expire("Setup", time);
+                parcel.markAsReturned("Setup", time);
+            }
+        }
+    }
+
+    @ParameterizedTest(name = "history records {0} -> {1}")
+    @MethodSource("validTransitions")
+    void testHistoryRecordsActorAndTimestampForEachTransition(
+            Parcel.ParcelState from, Parcel.ParcelState to) {
+        LocalDateTime setupTime = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).minusDays(1);
+        driveTo(from, setupTime);
+
+        int historySizeBefore = parcel.getHistory().size();
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+
+        transitionTo(to).run();
+
+        assertEquals(historySizeBefore + 1, parcel.getHistory().size());
+        Parcel.StateHistory last = parcel.getHistory().get(historySizeBefore);
+        assertEquals(to, last.state());
+        assertEquals("Actor", last.actor());
+        assertEquals(now, last.timestamp());
+    }
+
     @Test
     void testInitialStateAndHistoryCreation() {
         assertEquals(Parcel.ParcelState.CREATED, parcel.getState());
