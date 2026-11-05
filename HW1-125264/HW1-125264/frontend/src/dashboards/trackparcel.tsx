@@ -98,7 +98,7 @@ export const TrackParcel: React.FC = () => {
                     {new Date(transition.timestamp).toLocaleString()}
                     </span>
                     {transition.actor && (
-                    <span className="text-xs text-gray-400 mt-0.5">
+                    <span className="text-xs text-gray-500 mt-0.5">
                         User: {transition.actor}
                     </span>
                     )}

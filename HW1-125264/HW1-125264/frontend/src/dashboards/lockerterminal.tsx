@@ -110,7 +110,7 @@ export const LockerTerminal: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              className="w-full py-2 bg-green-800 hover:bg-green-900 text-white font-medium rounded-lg transition-colors"
             >
               Pick Up
             </button>

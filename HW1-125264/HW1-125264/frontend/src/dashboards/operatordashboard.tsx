@@ -208,7 +208,7 @@ export const OperatorDashboard: React.FC = () => {
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-700">Parcels</h2>
 
-        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+        <div className="overflow-x-auto border border-gray-200 rounded-lg shadow-sm" tabIndex={0}>
           <table className="min-w-full divide-y divide-gray-200 bg-white text-sm text-left">
             <thead className="bg-gray-50 text-gray-700 font-semibold uppercase tracking-wider">
               <tr>
