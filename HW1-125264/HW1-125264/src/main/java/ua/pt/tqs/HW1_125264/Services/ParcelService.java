@@ -135,6 +135,10 @@ public class ParcelService {
         return parcelRepository.findByState(state);
     }
 
+    public List<Parcel> getParcelsByStationAndState(String station, ParcelState state) {
+        return parcelRepository.findByStationAndState(station, state);
+    }
+
     @Transactional
     public Parcel markAsReturned(UUID trackingCode, LocalDateTime now) {
 

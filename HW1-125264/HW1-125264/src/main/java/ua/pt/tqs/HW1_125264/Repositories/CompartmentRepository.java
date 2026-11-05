@@ -36,4 +36,6 @@ public interface CompartmentRepository extends JpaRepository<Compartment, Long> 
        "GROUP BY c.size")
     List<Object[]> countAvailableBySize(@Param("stationId") Long stationId);
 
+    List<Compartment> findByStationIdOrderByIdAsc(Long stationId);
+
 }

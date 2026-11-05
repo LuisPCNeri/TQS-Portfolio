@@ -28,6 +28,7 @@ import ua.pt.tqs.HW1_125264.Entities.Parcel;
 import ua.pt.tqs.HW1_125264.Entities.Compartment.CompartmentStatus;
 import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelSize;
 import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelState;
+import ua.pt.tqs.HW1_125264.Exceptions.CompartmentNotFoundException;
 import ua.pt.tqs.HW1_125264.Exceptions.HardwareFailureException;
 import ua.pt.tqs.HW1_125264.Exceptions.InvalidPickupCodeException;
 import ua.pt.tqs.HW1_125264.Exceptions.NoAvailableCompartmentException;
@@ -35,6 +36,7 @@ import ua.pt.tqs.HW1_125264.Exceptions.ParcelNotFoundException;
 import ua.pt.tqs.HW1_125264.LockerHardwareSim.InMemoryLockerHardwareFake;
 import ua.pt.tqs.HW1_125264.Repositories.CompartmentRepository;
 import ua.pt.tqs.HW1_125264.Repositories.ParcelRepository;
+import ua.pt.tqs.HW1_125264.Services.CompartmentService;
 import ua.pt.tqs.HW1_125264.Services.ParcelService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +61,7 @@ class ParcelServiceIT {
     }
 
     @Autowired ParcelService parcelService;
+    @Autowired CompartmentService compartmentService;
     @Autowired CompartmentRepository compartmentRepository;
     @Autowired ParcelRepository parcelRepository;
     @Autowired InMemoryLockerHardwareFake hardwareFake;
@@ -316,6 +319,36 @@ class ParcelServiceIT {
         Parcel reloaded = parcelRepository
             .findByTrackingCode(returned.getTrackingCode()).orElseThrow();
         assertNull(reloaded.getCompartment());
+    }
+
+    @Test
+    void testMarkAvailableCompartmentOutOfServiceSetsFaulty() {
+        Compartment compartment = compartmentRepository.findByStationIdOrderByIdAsc(1L).stream()
+            .filter(c -> c.getStatus() == CompartmentStatus.AVAILABLE)
+            .findFirst().orElseThrow();
+
+        Compartment updated = compartmentService.markOutOfService(compartment.getId());
+
+        assertEquals(CompartmentStatus.FAULTY, updated.getStatus());
+        assertEquals(CompartmentStatus.FAULTY,
+            compartmentRepository.findById(compartment.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
+    void testMarkOccupiedCompartmentOutOfServiceThrows() {
+        ParcelDTO dto = new ParcelDTO();
+        dto.setSize(ParcelSize.M);
+        dto.setRecipientContact("user@domain.com");
+        Parcel parcel = parcelService.createParcel(1L, dto);
+
+        assertThrows(IllegalStateException.class,
+            () -> compartmentService.markOutOfService(parcel.getCompartment().getId()));
+    }
+
+    @Test
+    void testMarkUnknownCompartmentOutOfServiceThrows() {
+        assertThrows(CompartmentNotFoundException.class,
+            () -> compartmentService.markOutOfService(9999L));
     }
 
     private Parcel createParcel() {

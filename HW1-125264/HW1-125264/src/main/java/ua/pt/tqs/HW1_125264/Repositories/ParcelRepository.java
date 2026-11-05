@@ -20,6 +20,7 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
     Optional<Parcel> findByTrackingCode(UUID trackingCode);
     List<Parcel> findByStation(String station);
     List<Parcel> findByState(ParcelState state);
+    List<Parcel> findByStationAndState(String station, ParcelState state);
 
     @Query("SELECT p FROM Parcel p LEFT JOIN FETCH p.history WHERE p.trackingCode = :trackingCode")
     Optional<Parcel> findByTrackingCodeWithHistory(@Param("trackingCode") UUID trackingCode);
