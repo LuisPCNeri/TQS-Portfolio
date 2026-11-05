@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ua.pt.tqs.HW1_125264.DTOs.ParcelDTO;
+import ua.pt.tqs.HW1_125264.DTOs.StateHistoryDTO;
 import ua.pt.tqs.HW1_125264.Entities.Parcel;
 import ua.pt.tqs.HW1_125264.Exceptions.HardwareFailureException;
 import ua.pt.tqs.HW1_125264.Exceptions.InvalidPickupCodeException;
@@ -42,6 +43,7 @@ public class ParcelController {
 
     private ParcelDTO toDto(Parcel parcel) {
         return ParcelDTO.builder().trackingCode(parcel.getTrackingCode())
+                .pickupCode(parcel.getPickupCode())
                 .station(parcel.getStation())
                 .recipientContact(parcel.getRecipientContact())
                 .size(parcel.getSize())
@@ -49,6 +51,13 @@ public class ParcelController {
                 .createdAt(parcel.getCreatedAt())
                 .readyForPickupAt(parcel.getReadyForPickupAt())
                 .pickupDeadline(parcel.getPickupDeadline())
+                    .history(parcel.getHistory().stream()
+                    .map(h -> StateHistoryDTO.builder()
+                        .state(h.state().name())
+                        .timestamp(h.timestamp())
+                        .actor(h.actor())
+                        .build())
+                    .toList())
                 .build();
     }
 

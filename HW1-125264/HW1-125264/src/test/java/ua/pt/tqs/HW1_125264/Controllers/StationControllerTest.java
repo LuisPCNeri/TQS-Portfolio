@@ -17,19 +17,21 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import ua.pt.tqs.HW1_125264.Entities.LockerStation;
+import ua.pt.tqs.HW1_125264.Repositories.CompartmentRepository;
 import ua.pt.tqs.HW1_125264.Services.StationService;
 
 @ExtendWith(MockitoExtension.class)
 class StationControllerTest {
 
     @Mock private StationService stationService;
+    @Mock private CompartmentRepository compartmentRepository;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-            .standaloneSetup(new StationController(stationService))
+            .standaloneSetup(new StationController(stationService, compartmentRepository))
             .build();
     }
 
@@ -42,6 +44,7 @@ class StationControllerTest {
         when(station.getLatitude()).thenReturn(41.1496);
         when(station.getLongitude()).thenReturn(-8.6109);
         when(stationService.findNearestStations("Porto")).thenReturn(List.of(station));
+        when(compartmentRepository.countAvailableBySize(1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/stations").param("addr", "Porto"))
             .andExpect(status().isOk())

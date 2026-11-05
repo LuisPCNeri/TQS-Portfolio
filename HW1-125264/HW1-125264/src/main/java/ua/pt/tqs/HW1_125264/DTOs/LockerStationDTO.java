@@ -1,5 +1,7 @@
 package ua.pt.tqs.HW1_125264.DTOs;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.AllArgsConstructor;
@@ -18,5 +20,5 @@ public class LockerStationDTO {
     private String addr;
     private double latitude;
     private double longitude;
-
+    private Map<String, Long> freeCompartmentsBySize;
 }

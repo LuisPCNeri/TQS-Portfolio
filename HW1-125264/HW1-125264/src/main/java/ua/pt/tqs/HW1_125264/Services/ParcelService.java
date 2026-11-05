@@ -113,11 +113,13 @@ public class ParcelService {
         compartment.setStatus(CompartmentStatus.AVAILABLE);
         compartmentRepository.save(compartment);
 
+        parcel.setCompartment(null);
+
         return parcelRepository.save(parcel);
     }
 
     public Parcel getParcelByTrackingCode(UUID trackingCode) {
-        return parcelRepository.findByTrackingCode(trackingCode)
+        return parcelRepository.findByTrackingCodeWithHistory(trackingCode)
             .orElseThrow(() -> new ParcelNotFoundException("Parcel not found with tracking code: " + trackingCode));
     }
 
@@ -142,8 +144,11 @@ public class ParcelService {
         parcel.markAsReturned("Operator", now);
 
         Compartment compartment = parcel.getCompartment();
-        compartment.setStatus(CompartmentStatus.OCCUPIED);
-        compartmentRepository.save(compartment);
+        if (compartment != null) {
+            compartment.setStatus(CompartmentStatus.AVAILABLE);
+            compartmentRepository.save(compartment);
+            parcel.setCompartment(null);
+        }
 
         return parcelRepository.save(parcel);
     }

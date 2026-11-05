@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -57,7 +58,7 @@ public class OperatorController {
             .stream().map(this::toDto).toList();
     }
 
-    @GetMapping("/parcels/{trackingCode}/return")
+    @PutMapping("/parcels/{trackingCode}/return")
     public ResponseEntity<ParcelDTO> returnParcel(@PathVariable UUID trackingCode) {
         Parcel parcel = parcelService.markAsReturned(trackingCode, LocalDateTime.now(clock));
         return ResponseEntity.ok(toDto(parcel));

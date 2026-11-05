@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -79,7 +80,7 @@ class OperatorControllerTest {
         when(parcelService.markAsReturned(eq(trackingCode), any()))
             .thenReturn(parcel(trackingCode));
 
-        mockMvc.perform(get("/api/v1/operator/parcels/{trackingCode}/return", trackingCode))
+        mockMvc.perform(put("/api/v1/operator/parcels/{trackingCode}/return", trackingCode))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.trackingCode").value(trackingCode.toString()));
     }
@@ -90,7 +91,7 @@ class OperatorControllerTest {
         when(parcelService.markAsReturned(eq(trackingCode), any()))
             .thenThrow(new ParcelNotFoundException("missing"));
 
-        mockMvc.perform(get("/api/v1/operator/parcels/{trackingCode}/return", trackingCode))
+        mockMvc.perform(put("/api/v1/operator/parcels/{trackingCode}/return", trackingCode))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.error").value("missing"));
     }

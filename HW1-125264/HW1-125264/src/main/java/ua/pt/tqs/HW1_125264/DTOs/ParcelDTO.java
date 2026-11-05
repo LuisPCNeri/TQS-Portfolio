@@ -1,6 +1,7 @@
 package ua.pt.tqs.HW1_125264.DTOs;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -22,6 +23,8 @@ import ua.pt.tqs.HW1_125264.Entities.Parcel.ParcelState;
 public class ParcelDTO {
     @JsonProperty(access = Access.READ_ONLY)
     private UUID trackingCode;
+    @JsonProperty(access = Access.READ_ONLY)
+    private UUID pickupCode;
 
     private String station;
     private String recipientContact;
@@ -35,4 +38,6 @@ public class ParcelDTO {
     private LocalDateTime pickupDeadline;
     @JsonProperty(access = Access.READ_ONLY)
     private LocalDateTime readyForPickupAt;
+
+    private List<StateHistoryDTO> history;
 }

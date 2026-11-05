@@ -1,5 +1,6 @@
 package ua.pt.tqs.HW1_125264.Repositories;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,5 +30,10 @@ public interface CompartmentRepository extends JpaRepository<Compartment, Long> 
         @Param("stationId") Long stationId,
         @Param("size") ParcelSize size
     );
+
+    @Query("SELECT c.size, COUNT(c) FROM Compartment c " +
+       "WHERE c.station.id = :stationId AND c.status = 'AVAILABLE' " +
+       "GROUP BY c.size")
+    List<Object[]> countAvailableBySize(@Param("stationId") Long stationId);
 
 }

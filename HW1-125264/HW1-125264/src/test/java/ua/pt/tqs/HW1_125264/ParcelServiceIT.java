@@ -109,6 +109,7 @@ class ParcelServiceIT {
         dto.setSize(ParcelSize.M);
         dto.setRecipientContact("user@domain.com");
         Parcel parcel = parcelService.createParcel(1L, dto);
+        Long compartmentId = parcel.getCompartment().getId();
         Parcel dropped = parcelService.dropOffParcel(
             parcel.getTrackingCode(), "Courier", LocalDateTime.now());
 
@@ -120,8 +121,30 @@ class ParcelServiceIT {
         );
 
         Compartment c = compartmentRepository
-            .findById(dropped.getCompartment().getId()).orElseThrow();
+            .findById(compartmentId).orElseThrow();
         assertEquals(CompartmentStatus.AVAILABLE, c.getStatus());
+
+        Parcel picked = parcelRepository
+            .findByTrackingCode(dropped.getTrackingCode()).orElseThrow();
+        assertNull(picked.getCompartment());
+    }
+
+    @Test
+    void testFreedCompartmentCanBeReusedAfterPickup() {
+        ParcelDTO dto = new ParcelDTO();
+        dto.setSize(ParcelSize.M);
+        dto.setRecipientContact("user@domain.com");
+
+        Parcel first = parcelService.createParcel(1L, dto);
+        Long compartmentId = first.getCompartment().getId();
+        Parcel dropped = parcelService.dropOffParcel(
+            first.getTrackingCode(), "Courier", LocalDateTime.now());
+        parcelService.pickupParcel(
+            dropped.getTrackingCode(), dropped.getPickupCode(), "Recipient", LocalDateTime.now());
+
+        Parcel second = parcelService.createParcel(1L, dto);
+
+        assertEquals(compartmentId, second.getCompartment().getId());
     }
 
     @Test
@@ -275,6 +298,24 @@ class ParcelServiceIT {
             parcel.getTrackingCode(), LocalDateTime.now());
 
         assertEquals(ParcelState.RETURNED, returned.getState());
+    }
+
+    @Test
+    void testMarkAsReturnedFreesCompartment() {
+        Parcel parcel = createAndDropOffParcel();
+        Long compartmentId = parcel.getCompartment().getId();
+        parcel.setState(ParcelState.EXPIRED);
+        parcelRepository.save(parcel);
+
+        Parcel returned = parcelService.markAsReturned(
+            parcel.getTrackingCode(), LocalDateTime.now());
+
+        Compartment c = compartmentRepository.findById(compartmentId).orElseThrow();
+        assertEquals(CompartmentStatus.AVAILABLE, c.getStatus());
+
+        Parcel reloaded = parcelRepository
+            .findByTrackingCode(returned.getTrackingCode()).orElseThrow();
+        assertNull(reloaded.getCompartment());
     }
 
     private Parcel createParcel() {
